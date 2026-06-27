@@ -23,16 +23,18 @@ interface OurProjectPageProps {
 // =========================================================================
 const HERO_LOGO_URL = "/Logo-Icon-rose-ash.png";       
 const JOIN_US_LOGO_URL = "/Logo-Icon-pearl-gold.png";   
-const NAV_LOGO_URL = "/Logo-Icon-light-ivory.png";  
+const NAV_LOGO_URL = "/Logo-Icon-light-ivory.png"; 
+const logo ="/Syrian-Dental-Academic-Network-Logo-Light-ivory.png";
 
-const orthodontics = "/orthodontics.jpg";
-const fixed_prosthodontics = "/fixed_prosthodontics.jpg";
-const oral_surgery = "/oral_surgery.jpg";
-const pediatric_dentistry = "/pediatric_dentistry.jpg";
-const Endodontics = "/Endodontics.jpg";
-const Oral_medicine = "/Oral_medicine.jpg";
-const pathology = "/pathology.jpg";
-const perio = "/perio.jpg";
+
+const orthodontics = "/orthodontics.png";
+const fixed_prosthodontics = "/fixed_prosthodontics.png";
+const oral_surgery = "/oral_surgery.png";
+const pediatric_dentistry = "/pediatric_dentistry.png";
+const Endodontics = "/Endodontics.png";
+const Oral_medicine = "/Oral_medicine.png";
+const pathology = "/pathology.png";
+const perio = "/perio.png";
 
 const guidelinesData: GuidelineItem[] = [
   {
@@ -223,7 +225,7 @@ export default function NextApp() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[#F9ECE4] font-black text-xl tracking-wider leading-none">SDAN</span>
+                <span className="text-[#F9ECE4] font-black text-xl tracking-wider leading-none">SyDAN</span>
                 <span className="text-[#A08C8A] font-light text-[10px] tracking-widest uppercase">SYRIAN NETWORK</span>
               </div>
             </div>
@@ -369,10 +371,10 @@ function HomePage() {
         <div className="max-w-4xl mx-auto flex flex-col items-center">
           <div className="mb-8">
             <div className="bg-white/5 rounded-[24px] border border-white/10 p-5 w-[160px] h-[160px] flex items-center justify-center shadow-2xl backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300">
-              <img src={HERO_LOGO_URL} alt="SDAN Emblem" className="object-contain w-full h-full" />
+              <img src={logo} alt="SDAN Emblem" className="object-contain w-full h-full" />
             </div>
           </div>
-          <span className="inline-block bg-[#A08C8A]/15 text-[#F9ECE4] border border-[#A08C8A]/40 rounded-full px-5 py-2 text-[10px] font-extrabold uppercase tracking-widest mb-6">Pioneering Dental Innovations</span>
+
           <h1 className="text-4xl sm:text-6xl font-black text-[#F9ECE4] tracking-tight mb-8">Syrian Dental<br /><span className="text-[#A08C8A]">Academic Network</span></h1>
           <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-6">Connecting Syrian dental minds, turning clinic stories into shared science. Because our work doesn't end in the clinic—it begins with research.</p>
         </div>
