@@ -32,9 +32,9 @@ const fixed_prosthodontics = "/fixed_prosthodontics.png";
 const oral_surgery = "/oral_surgery.png";
 const pediatric_dentistry = "/pediatric_dentistry.png";
 const Endodontics = "/Endodontics.png";
-const Oral_medicine = "/Oral_medicine.png";
-const pathology = "/pathology.png";
-const perio = "/perio.png";
+const Oral_medicine = "/Oral medicine.png";
+const pathology = "/Pathology.png";
+const perio = "/Perio.png";
 
 const guidelinesData: GuidelineItem[] = [
   {
