@@ -22,7 +22,7 @@ interface OurProjectPageProps {
 // PREMIUM LOGO ASSETS
 // =========================================================================
 const HERO_LOGO_URL = "/Logo-Icon-rose-ash.png";       
-const JOIN_US_LOGO_URL = "/Logo-Icon-pearl-gold.png";   
+const JOIN_US_LOGO_URL = "/Logo-Icon-rose-ash.png";   
 const NAV_LOGO_URL = "/Logo-Icon-light-ivory.png"; 
 const logo ="/Syrian-Dental-Academic-Network-Logo-Light-ivory.png";
 
@@ -446,14 +446,17 @@ function JoinUsPage() {
       <div className="flex flex-col md:flex-row items-center justify-center gap-12 max-w-5xl mx-auto mt-8">
         
         {/* Left Side: Logo & Subtitle */}
-        <div className="flex flex-col items-center space-y-4 text-center md:w-1/2">
-          <div className="bg-white rounded-[32px] p-8 w-[280px] h-[280px] flex items-center justify-center shadow-2xl transition-transform hover:scale-105 duration-300">
-            <img src={JOIN_US_LOGO_URL} alt="Scientific Dental Association Network" className="object-contain w-full h-full" />
-          </div>
-          <p className="text-sm font-semibold tracking-wider text-white/50 uppercase pt-2">
-            Scientific Dental Association Network
-          </p>
-        </div>
+<div className="flex flex-col items-center space-y-4 text-center md:w-1/2">
+  <img
+    src={JOIN_US_LOGO_URL}
+    alt="Scientific Dental Association Network"
+    className="object-contain w-[280px] h-[280px] transition-transform hover:scale-105 duration-300"
+  />
+
+  <p className="text-sm font-semibold tracking-wider text-white/50 uppercase pt-2">
+    Scientific Dental Association Network
+  </p>
+</div>
 
         {/* Right Side: Modern Form Container */}
         <div className="bg-white rounded-[32px] p-8 sm:p-10 text-gray-800 shadow-2xl w-full md:w-1/2 max-w-md">
