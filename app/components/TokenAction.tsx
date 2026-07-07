@@ -1,0 +1,84 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+
+interface TokenActionProps {
+  token: string;
+  endpoint: string;
+  promptHeading: string;
+  promptText: string;
+  buttonLabel: string;
+  successHeading: string;
+  successText: (title?: string) => string;
+}
+
+type State = "idle" | "loading" | "done" | "error";
+
+export default function TokenAction(props: TokenActionProps) {
+  const [state, setState] = useState<State>(props.token ? "idle" : "error");
+  const [title, setTitle] = useState<string | undefined>(undefined);
+  const [error, setError] = useState("This link is invalid.");
+
+  async function run() {
+    setState("loading");
+    try {
+      const res = await fetch(props.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: props.token }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Something went wrong.");
+        setState("error");
+        return;
+      }
+      setTitle(data.title);
+      setState("done");
+    } catch {
+      setError("Network error. Please try again.");
+      setState("error");
+    }
+  }
+
+  return (
+    <main className="min-h-[70vh] flex items-center justify-center px-4 py-20">
+      <div className="max-w-md w-full rounded-[24px] border-2 border-[#A08C8A] bg-[#F9ECE4] p-8 text-center text-[#4A4A4A] shadow-2xl">
+        {state === "done" ? (
+          <>
+            <h1 className="text-2xl font-black mb-3">{props.successHeading}</h1>
+            <p className="text-sm text-gray-700 leading-relaxed mb-6">
+              {props.successText(title)}
+            </p>
+          </>
+        ) : state === "error" ? (
+          <>
+            <h1 className="text-2xl font-black mb-3">Link not valid</h1>
+            <p className="text-sm text-gray-700 leading-relaxed mb-6">{error}</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-black mb-3">{props.promptHeading}</h1>
+            <p className="text-sm text-gray-700 leading-relaxed mb-6">{props.promptText}</p>
+            <button
+              onClick={run}
+              disabled={state === "loading"}
+              className="inline-block rounded-xl bg-[#A08C8A] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#8e7a78] disabled:opacity-60"
+            >
+              {state === "loading" ? "Please wait…" : props.buttonLabel}
+            </button>
+          </>
+        )}
+        <div className={state === "done" || state === "error" ? "" : "mt-6"}>
+          <Link
+            href="/"
+            className="inline-block rounded-xl bg-[#4A4A4A] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#333]"
+          >
+            Back to site
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}

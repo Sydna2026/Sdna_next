@@ -10,10 +10,10 @@ export const maxDuration = 300;
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
+  // Header only — never accept the secret in the query string (it gets logged).
   const header = req.headers.get("authorization") || "";
   const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
-  const query = req.nextUrl.searchParams.get("secret") || "";
-  return bearer === secret || query === secret;
+  return bearer.length === secret.length && bearer === secret;
 }
 
 async function handle(req: NextRequest) {

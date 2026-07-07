@@ -1,6 +1,7 @@
 import Parser from "rss-parser";
 import { prisma } from "./prisma";
 import { sendArticlesEmail } from "./email";
+import { isBlockedHost } from "./security";
 
 const parser = new Parser({ timeout: 15000 });
 
@@ -28,6 +29,11 @@ export async function runIngestion(): Promise<IngestSummary> {
 
   for (const resource of resources) {
     summary.feedsChecked++;
+    // SSRF guard: never fetch internal/loopback/link-local addresses.
+    if (isBlockedHost(resource.feedUrl)) {
+      summary.feedsFailed++;
+      continue;
+    }
     let feed: Parser.Output<Record<string, unknown>>;
     try {
       feed = await parser.parseURL(resource.feedUrl);
@@ -97,7 +103,7 @@ export async function runIngestion(): Promise<IngestSummary> {
             link: a.link,
             publishedAt: a.publishedAt,
           })),
-          unsubscribeUrl: `${base}/api/unsubscribe?token=${sub.unsubToken}`,
+          unsubscribeUrl: `${base}/unsubscribe?token=${sub.unsubToken}`,
         });
         summary.emailsSent++;
         summary.perSpecialization[specialization.slug] =

@@ -126,6 +126,8 @@ else
   ensure_env_var "ADMIN_EMAIL" ""
   ensure_env_var "ADMIN_PASSWORD" ""
 fi
+# Lock down secrets on this shared host (owner read/write only).
+chmod 600 "$APP_DIR/.env" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 5b. Install dependencies + build
@@ -147,6 +149,10 @@ log "Applying database schema (prisma db push)"
 npx prisma db push --skip-generate --accept-data-loss
 log "Seeding specializations"
 npx prisma db seed || log "Seed step reported an issue (continuing)."
+
+# Restrict the database (contains subscriber emails / PII) to the owner.
+chmod 700 "$APP_DIR/prisma" 2>/dev/null || true
+chmod 600 "$APP_DIR/prisma/sdna.db" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 6. Run under PM2 on the chosen port + survive reboots
@@ -176,6 +182,7 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     location / {
         proxy_pass http://127.0.0.1:${PORT};

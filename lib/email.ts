@@ -105,8 +105,10 @@ export async function sendArticlesEmail(args: {
       const date = a.publishedAt
         ? `<span style="color:#8b8b8b;font-size:12px;"> — ${a.publishedAt.toISOString().slice(0, 10)}</span>`
         : "";
+      // Feed content is third-party: only allow http(s) links and escape them.
+      const href = safeHref(a.link);
       return `<li style="margin:0 0 12px;line-height:1.5;">
-        <a href="${a.link}" style="color:${BRAND};font-weight:bold;text-decoration:none;">${escapeHtml(
+        <a href="${href}" style="color:${BRAND};font-weight:bold;text-decoration:none;">${escapeHtml(
           a.title,
         )}</a>${date}
       </li>`;
@@ -137,4 +139,15 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+// Only permit http(s) links in emails, HTML-escaped; anything else becomes '#'.
+function safeHref(u: string): string {
+  try {
+    const url = new URL(u);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "#";
+    return escapeHtml(url.toString());
+  } catch {
+    return "#";
+  }
 }

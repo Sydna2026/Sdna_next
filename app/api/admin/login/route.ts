@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ADMIN_COOKIE, createSessionValue, credentialsMatch } from "@/lib/adminAuth";
+import { clientIp, rateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +9,15 @@ export const dynamic = "force-dynamic";
 const schema = z.object({ email: z.string().min(1), password: z.string().min(1) });
 
 export async function POST(req: NextRequest) {
+  // Throttle brute-force attempts: 10 tries per 15 minutes per IP.
+  const limit = rateLimit(`login:${clientIp(req)}`, 10, 15 * 60 * 1000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   if (!process.env.ADMIN_PASSWORD || !process.env.ADMIN_EMAIL) {
     return NextResponse.json(
       { ok: false, error: "Admin panel is not configured (set ADMIN_EMAIL and ADMIN_PASSWORD)." },

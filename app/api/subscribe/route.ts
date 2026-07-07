@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail } from "@/lib/email";
+import { clientIp, rateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,15 @@ function token(): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Throttle to curb email-bombing / quota abuse: 5 requests per 10 min per IP.
+  const limit = rateLimit(`subscribe:${clientIp(req)}`, 5, 10 * 60 * 1000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -56,9 +66,10 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Already confirmed — nothing to do.
+  // Already confirmed — don't resend, but return the same generic response as a
+  // new signup so the endpoint doesn't reveal who is already subscribed.
   if (existing && existing.status === "active") {
-    return NextResponse.json({ ok: true, status: "already" });
+    return NextResponse.json({ ok: true, status: "pending" });
   }
 
   // Create or refresh a pending subscription with a new confirmation token.
@@ -80,8 +91,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Point at the confirmation PAGE (button-gated), not the API, so email
+  // prefetchers can't auto-confirm the subscription.
   const base = process.env.APP_URL || new URL(req.url).origin;
-  const confirmUrl = `${base}/api/confirm?token=${confirmToken}`;
+  const confirmUrl = `${base}/confirm?token=${confirmToken}`;
 
   try {
     await sendConfirmationEmail({
