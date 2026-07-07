@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Dashboard from "./Dashboard";
+import ContentEditor from "./ContentEditor";
 
 interface Spec {
   id: string;
@@ -31,7 +33,7 @@ export default function AdminPanel() {
   const [specs, setSpecs] = useState<Spec[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [tab, setTab] = useState<"feeds" | "subscribers">("feeds");
+  const [tab, setTab] = useState<"dashboard" | "content" | "feeds" | "subscribers">("dashboard");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string>("");
 
@@ -147,7 +149,7 @@ export default function AdminPanel() {
       )}
 
       <div className="mb-6 flex gap-2">
-        {(["feeds", "subscribers"] as const).map((t) => (
+        {(["dashboard", "content", "feeds", "subscribers"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -159,6 +161,10 @@ export default function AdminPanel() {
           </button>
         ))}
       </div>
+
+      {tab === "dashboard" && <Dashboard onAuthError={handleAuthError} />}
+
+      {tab === "content" && <ContentEditor onAuthError={handleAuthError} />}
 
       {tab === "feeds" && (
         <div className="space-y-4">
