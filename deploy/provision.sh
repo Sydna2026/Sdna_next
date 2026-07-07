@@ -196,19 +196,26 @@ REDEPLOY
 chmod +x /usr/local/bin/redeploy
 
 # ---------------------------------------------------------------------------
-# 9. SSL (obtain once; certbot auto-renews thereafter)
+# 9. SSL / HTTPS
+# Section 7 rewrites the Nginx file as HTTP-only every run, which removes the
+# 443 block certbot adds. So: if a cert already exists we must RE-INSTALL it
+# into the freshly written Nginx site (no new cert issued — no rate limits).
+# If no cert exists yet, obtain one (which also installs the 443 block).
 # ---------------------------------------------------------------------------
-if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
-  if [ -z "$CERTBOT_EMAIL" ]; then
-    log "SKIPPING SSL: re-run with CERTBOT_EMAIL=you@example.com to enable HTTPS."
-  else
-    log "Obtaining Let's Encrypt certificate for ${DOMAIN}"
-    certbot --nginx -d "${DOMAIN}" -d "${WWW_DOMAIN}" \
-      --non-interactive --agree-tos -m "${CERTBOT_EMAIL}" --redirect \
-      || log "Certbot failed (is DNS pointing here yet?) — site still serves on HTTP."
-  fi
+if [ -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
+  log "Re-applying HTTPS to the Nginx site from the existing certificate"
+  certbot install --nginx --cert-name "${DOMAIN}" --redirect --non-interactive \
+    || log "Could not reinstall SSL into Nginx (check: certbot certificates)."
+elif [ -n "$CERTBOT_EMAIL" ]; then
+  log "Obtaining Let's Encrypt certificate for ${DOMAIN}"
+  certbot --nginx -d "${DOMAIN}" -d "${WWW_DOMAIN}" \
+    --non-interactive --agree-tos -m "${CERTBOT_EMAIL}" --redirect \
+    || log "Certbot failed (is DNS pointing here yet?) — site still serves on HTTP."
 else
-  log "SSL certificate already present — auto-renews, nothing to do."
+  log "SKIPPING SSL: re-run with CERTBOT_EMAIL=you@example.com to enable HTTPS."
 fi
+
+# Make sure Nginx is running the final config.
+nginx -t && systemctl reload nginx || true
 
 log "Done. Site: https://${DOMAIN}  (internal port ${PORT}, PM2 app '${APP_NAME}')"
