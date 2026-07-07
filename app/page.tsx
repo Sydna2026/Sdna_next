@@ -314,7 +314,7 @@ export default function NextApp() {
       <footer className="bg-[#3D3D3D] py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-[#F9ECE4] text-xs font-semibold tracking-widest uppercase opacity-75">
-            © 2026 SDAN Website. All rights reserved.
+            © 2026 SYDAN Website. All rights reserved.
           </p>
         </div>
       </footer>
