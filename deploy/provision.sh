@@ -100,8 +100,15 @@ fi
 # ---------------------------------------------------------------------------
 # 5a. Environment file (created once; never overwritten so secrets persist)
 # ---------------------------------------------------------------------------
+gen_secret() { openssl rand -hex 24 2>/dev/null || head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'; }
+# Append KEY="VALUE" to .env only if KEY is not already present.
+ensure_env_var() {
+  local key="$1" value="$2"
+  grep -qE "^${key}=" "$APP_DIR/.env" 2>/dev/null || echo "${key}=\"${value}\"" >> "$APP_DIR/.env"
+}
+
 if [ ! -f "$APP_DIR/.env" ]; then
-  log "Creating starter .env (edit it to add your Resend key)"
+  log "Creating starter .env (edit it to add your Resend key + admin password)"
   cat > "$APP_DIR/.env" <<ENV
 # Auto-created by provision.sh. Fill in RESEND_API_KEY to enable email sending.
 # Absolute DB path so Prisma resolves the same file at migrate + runtime.
@@ -109,7 +116,13 @@ DATABASE_URL="file:${APP_DIR}/prisma/sdna.db"
 APP_URL="https://${DOMAIN}"
 RESEND_API_KEY=""
 EMAIL_FROM="SDAN <news@${DOMAIN}>"
+CRON_SECRET="$(gen_secret)"
+ADMIN_PASSWORD=""
 ENV
+else
+  # Existing .env: make sure newer keys exist without touching current values.
+  ensure_env_var "CRON_SECRET" "$(gen_secret)"
+  ensure_env_var "ADMIN_PASSWORD" ""
 fi
 
 # ---------------------------------------------------------------------------
@@ -194,6 +207,19 @@ cat > /usr/local/bin/redeploy <<REDEPLOY
 cd "${APP_DIR}" && bash deploy/provision.sh "\$@"
 REDEPLOY
 chmod +x /usr/local/bin/redeploy
+
+# ---------------------------------------------------------------------------
+# 8b. Install cron job that polls research feeds for new articles
+# ---------------------------------------------------------------------------
+log "Installing article-ingestion cron (every 6 hours)"
+chmod +x "${APP_DIR}/deploy/ingest.sh" 2>/dev/null || true
+cat > /etc/cron.d/sydna-ingest <<CRON
+# Poll research feeds for new articles and email subscribers. Managed by provision.sh.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 */6 * * * root ${APP_DIR}/deploy/ingest.sh >> ${APP_DIR}/logs/ingest.log 2>&1
+CRON
+chmod 644 /etc/cron.d/sydna-ingest
 
 # ---------------------------------------------------------------------------
 # 9. SSL / HTTPS

@@ -92,6 +92,45 @@ export async function sendWelcomeEmail(args: {
   });
 }
 
+export async function sendArticlesEmail(args: {
+  to: string;
+  name?: string | null;
+  specializationTitle: string;
+  articles: { title: string; link: string; publishedAt?: Date | null }[];
+  unsubscribeUrl: string;
+}): Promise<void> {
+  const hi = args.name ? `Hi ${escapeHtml(args.name)},` : "Hi,";
+  const items = args.articles
+    .map((a) => {
+      const date = a.publishedAt
+        ? `<span style="color:#8b8b8b;font-size:12px;"> — ${a.publishedAt.toISOString().slice(0, 10)}</span>`
+        : "";
+      return `<li style="margin:0 0 12px;line-height:1.5;">
+        <a href="${a.link}" style="color:${BRAND};font-weight:bold;text-decoration:none;">${escapeHtml(
+          a.title,
+        )}</a>${date}
+      </li>`;
+    })
+    .join("");
+  const count = args.articles.length;
+  const body = `
+    <p style="line-height:1.6;">${hi}</p>
+    <p style="line-height:1.6;">${count} new ${count === 1 ? "article" : "articles"} in <strong>${escapeHtml(
+      args.specializationTitle,
+    )}</strong>:</p>
+    <ul style="padding-left:18px;margin:20px 0;">${items}</ul>
+    <p style="line-height:1.6;font-size:13px;color:#8b8b8b;margin-top:28px;">
+      <a href="${args.unsubscribeUrl}" style="color:${BRAND};">Unsubscribe</a> from ${escapeHtml(
+        args.specializationTitle,
+      )} updates.
+    </p>`;
+  await sendEmail({
+    to: args.to,
+    subject: `${count} new ${args.specializationTitle} ${count === 1 ? "article" : "articles"}`,
+    html: shell(`New ${args.specializationTitle} research`, body),
+  });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
