@@ -62,7 +62,7 @@ don't run any database commands by hand.
 
 ## Step 3 — Set environment variables (the Resend API key)
 
-The app reads secrets from a file at **`/var/www/sydan/.env`**. The provision
+The app reads secrets from a file at **`/opt/sydan/.env`**. The provision
 script creates this file automatically on first run with everything except your
 Resend key. Because it's git-ignored, it is **never overwritten by a redeploy**
 — your key stays put.
@@ -70,14 +70,14 @@ Resend key. Because it's git-ignored, it is **never overwritten by a redeploy**
 Edit it on the server:
 
 ```bash
-nano /var/www/sydan/.env
+nano /opt/sydan/.env
 ```
 
 Set the values (the key is the long string from the Resend dashboard, starting
 `re_...`):
 
 ```dotenv
-DATABASE_URL="file:/var/www/sydan/prisma/sdna.db"
+DATABASE_URL="file:/opt/sydan/prisma/sdna.db"
 APP_URL="https://sydan.org"
 RESEND_API_KEY="re_your_real_key_here"
 EMAIL_FROM="SDAN <news@sydan.org>"
@@ -116,7 +116,7 @@ redeploy
 ```
 
 That pulls the latest `main`, rebuilds, and restarts on the same port. (It's a
-thin wrapper around `cd /var/www/sydan && bash deploy/provision.sh`, so that
+thin wrapper around `cd /opt/sydan && bash deploy/provision.sh`, so that
 still works too. Domain/email are only needed the first time SSL is set up.)
 
 ---
@@ -126,7 +126,7 @@ still works too. Domain/email are only needed the first time SSL is set up.)
 ```bash
 pm2 status                 # is the app running?
 pm2 logs sydan             # app logs
-cat /var/www/sydan/.deploy_port   # which internal port it chose
+cat /opt/sydan/.deploy_port   # which internal port it chose
 ss -ltnp | grep nginx      # nginx listening on 80/443
 nginx -t                   # nginx config OK?
 ```
@@ -140,7 +140,7 @@ Pass these as env vars before the command if you ever need to:
 | Variable        | Default                | Purpose                              |
 | --------------- | ---------------------- | ------------------------------------ |
 | `PORT`          | `3100` (auto-bumps)    | Preferred internal port              |
-| `APP_DIR`       | `/var/www/sydan`       | Where the app is deployed            |
+| `APP_DIR`       | `/opt/sydan`       | Where the app is deployed            |
 | `CERTBOT_EMAIL` | *(empty = skip SSL)*   | Email for the Let's Encrypt cert     |
 
 Example: `PORT=4000 CERTBOT_EMAIL=you@example.com bash deploy/provision.sh`
@@ -154,26 +154,4 @@ Example: `PORT=4000 CERTBOT_EMAIL=you@example.com bash deploy/provision.sh`
   then re-run the script.
 - **502 Bad Gateway** — the Node app isn't up: `pm2 status`, `pm2 logs sydan`.
 - **Worried about the other app** — the script only touches
-  `sites-available/sydan.org` + `sites-enabled/sydan.org` and its own PM2
-  process `sydan`; nothing else is modified.
-- **Build runs out of memory on a small VPS** — add swap once:
-  ```bash
-  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-  echo '/swapfile none swap sw 0 0' >> /etc/fstab
-  ```
-
----
-
-## Note on repo access (deploy keys)
-
-Because this repo is **public**, the script clones it over HTTPS with no
-credentials — no deploy key needed. If you later make the repo **private**,
-create a read-only deploy key on the server and switch to SSH:
-
-```bash
-ssh-keygen -t ed25519 -C "sydan-deploy-key" -f ~/.ssh/sydan_deploy -N ""
-cat ~/.ssh/sydan_deploy.pub    # add on GitHub: repo → Settings → Deploy keys (read-only)
-printf 'Host github.com\n  IdentityFile ~/.ssh/sydan_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-```
-
-Then run the script with `REPO_URL=git@github.com:Sydna2026/Sdna_next.git`.
+  `sites-available/syda

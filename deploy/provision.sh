@@ -12,11 +12,11 @@
 #     && DOMAIN=sydan.org CERTBOT_EMAIL=you@example.com bash /tmp/provision.sh
 #
 # Or, if the repo is already cloned:
-#   cd /var/www/sydan && DOMAIN=sydan.org CERTBOT_EMAIL=you@example.com bash deploy/provision.sh
+#   cd /opt/sydan && DOMAIN=sydan.org CERTBOT_EMAIL=you@example.com bash deploy/provision.sh
 #
 # Optional overrides (env vars):
 #   PORT           preferred internal port (default 3100; auto-bumps if taken)
-#   APP_DIR        where to deploy (default /var/www/sydan)
+#   APP_DIR        where to deploy (default /opt/sydan)
 #   CERTBOT_EMAIL  email for Let's Encrypt (SSL skipped if empty)
 ###############################################################################
 set -euo pipefail
@@ -24,7 +24,7 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-sydan.org}"
 WWW_DOMAIN="www.${DOMAIN}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
-APP_DIR="${APP_DIR:-/var/www/sydan}"
+APP_DIR="${APP_DIR:-/opt/sydan}"
 REPO_URL="${REPO_URL:-https://github.com/Sydna2026/Sdna_next.git}"
 APP_NAME="sydan"
 NODE_MAJOR=22
