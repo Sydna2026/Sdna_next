@@ -1,0 +1,81 @@
+// Prisma schema for the SDAN site.
+// SQLite: single file, resolved relative to this schema's directory
+// (so DATABASE_URL="file:./sdna.db" => prisma/sdna.db). The file is
+// git-ignored and survives redeploys.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A dental specialization / guideline. `slug` matches the id used in the
+// front-end (e.g. "ortho", "histology") so the subscribe form can reference it.
+model Specialization {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  title         String
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+  resources     Resource[]
+  articles      Article[]
+}
+
+// A person who has given an email address. One subscriber can follow many
+// specializations (via Subscription rows).
+model Subscriber {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+// Links a subscriber to a specialization, with double opt-in state.
+// status: "pending" (awaiting email confirmation) | "active" | "unsubscribed"
+model Subscription {
+  id               String         @id @default(cuid())
+  subscriberId     String
+  specializationId String
+  status           String         @default("pending")
+  confirmToken     String?        @unique
+  unsubToken       String         @unique
+  confirmedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  subscriber       Subscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, specializationId])
+  @@index([specializationId, status])
+}
+
+// A research feed (RSS/Atom) attached to a specialization. Used in Phase 3.
+model Resource {
+  id               String         @id @default(cuid())
+  specializationId String
+  name             String
+  feedUrl          String
+  active           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+  articles         Article[]
+}
+
+// An ingested article (Phase 3). `link` is unique so we never send duplicates.
+model Article {
+  id               String         @id @default(cuid())
+  specializationId String
+  resourceId       String?
+  title            String
+  link             String         @unique
+  publishedAt      DateTime?
+  notifiedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+  resource         Resource?      @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+
+  @@index([specializationId])
+}

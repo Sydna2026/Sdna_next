@@ -98,12 +98,37 @@ if command -v ufw >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Build
+# 5a. Environment file (created once; never overwritten so secrets persist)
 # ---------------------------------------------------------------------------
-log "Installing dependencies (npm ci)"
-npm ci
+if [ ! -f "$APP_DIR/.env" ]; then
+  log "Creating starter .env (edit it to add your Resend key)"
+  cat > "$APP_DIR/.env" <<ENV
+# Auto-created by provision.sh. Fill in RESEND_API_KEY to enable email sending.
+# Absolute DB path so Prisma resolves the same file at migrate + runtime.
+DATABASE_URL="file:${APP_DIR}/prisma/sdna.db"
+APP_URL="https://${DOMAIN}"
+RESEND_API_KEY=""
+EMAIL_FROM="SDAN <news@${DOMAIN}>"
+ENV
+fi
+
+# ---------------------------------------------------------------------------
+# 5b. Install dependencies + build
+# ---------------------------------------------------------------------------
+# Use 'npm install' (not 'npm ci') so the lockfile self-heals when new deps
+# are added. postinstall runs 'prisma generate'; build runs it again + next build.
+log "Installing dependencies (npm install)"
+npm install --no-fund --no-audit
 log "Building production bundle"
 npm run build
+
+# ---------------------------------------------------------------------------
+# 5c. Database: create/update schema and seed specializations (idempotent)
+# ---------------------------------------------------------------------------
+log "Applying database schema (prisma db push)"
+npx prisma db push --skip-generate
+log "Seeding specializations"
+npx prisma db seed || log "Seed step reported an issue (continuing)."
 
 # ---------------------------------------------------------------------------
 # 6. Run under PM2 on the chosen port + survive reboots

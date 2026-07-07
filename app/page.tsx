@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import SubscribeForm from './components/SubscribeForm';
 
 // =========================================================================
 // TYPES & INTERFACES
@@ -33,8 +34,8 @@ const oral_surgery = "/oral_surgery.png";
 const pediatric_dentistry = "/pediatric_dentistry.png";
 const Endodontics = "/Endodontics.png";
 const Oral_medicine = "/Oral medicine.png";
-const pathology = "/Pathology.png";
-const perio = "/Perio.png";
+const pathology = "/pathology.png";
+const removable_prosthodontics = "/removable_prosthodontics.png";
 
 const guidelinesData: GuidelineItem[] = [
   {
@@ -93,7 +94,7 @@ const guidelinesData: GuidelineItem[] = [
     title: "Removable Prosthodontics",
     icon: (
       <img
-        src={perio}
+        src={removable_prosthodontics}
         alt="Removable Prosthodontics"
         className="w-8 h-8 object-contain"
       />
@@ -347,6 +348,10 @@ export default function NextApp() {
                   ))}
                 </ul>
               </div>
+              <div>
+                <h4 className="text-xs font-black text-[#A08C8A] uppercase tracking-widest mb-3">Newsletter</h4>
+                <SubscribeForm slug={selectedGuideline.id} title={selectedGuideline.title} />
+              </div>
             </div>
             <div className="mt-8 flex justify-end">
               <button onClick={() => setSelectedGuideline(null)} className="bg-[#4A4A4A] text-white hover:bg-[#333333] transition-all px-6 py-3 rounded-xl text-xs font-bold tracking-widest uppercase shadow-md">Close Details</button>
@@ -431,7 +436,7 @@ function OurProjectPage({ onOpenGuideline, triggerToast }: OurProjectPageProps) 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {guidelinesData.map((item) => (
             <div key={item.id} onClick={() => onOpenGuideline(item)} className="bg-white rounded-[16px] border p-5 cursor-pointer hover:border-[#A08C8A] hover:shadow-md transition-all flex items-center justify-between group">
-              <div className="flex items-center space-x-4 overflow-hidden"><div className="p-3 bg-[#A08C8A]/15 text-[#A08C8A] rounded-xl">{item.icon}</div><h4 className="font-extrabold text-[#4A4A4A] truncate">{item.title}</h4></div>
+              <div className="flex items-center space-x-4"><div className="p-3 bg-[#A08C8A]/15 text-[#A08C8A] rounded-xl shrink-0">{item.icon}</div><h4 className="font-extrabold text-[#4A4A4A] leading-tight break-words">{item.title}</h4></div>
             </div>
           ))}
         </div>

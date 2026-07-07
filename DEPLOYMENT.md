@@ -54,6 +54,56 @@ That's the whole deployment. When it finishes, open **https://sydan.org**.
 > If DNS hasn't propagated yet, the site comes up on `http://` and you can
 > just re-run the same command later to add HTTPS.
 
+The script also installs dependencies, creates the SQLite database, applies the
+schema (`prisma db push`), and seeds the specializations automatically — you
+don't run any database commands by hand.
+
+---
+
+## Step 3 — Set environment variables (the Resend API key)
+
+The app reads secrets from a file at **`/var/www/sydan/.env`**. The provision
+script creates this file automatically on first run with everything except your
+Resend key. Because it's git-ignored, it is **never overwritten by a redeploy**
+— your key stays put.
+
+Edit it on the server:
+
+```bash
+nano /var/www/sydan/.env
+```
+
+Set the values (the key is the long string from the Resend dashboard, starting
+`re_...`):
+
+```dotenv
+DATABASE_URL="file:/var/www/sydan/prisma/sdna.db"
+APP_URL="https://sydan.org"
+RESEND_API_KEY="re_your_real_key_here"
+EMAIL_FROM="SDAN <news@sydan.org>"
+```
+
+`EMAIL_FROM` must use a domain you've verified in Resend (here, `sydan.org`).
+Save (in nano: `Ctrl+O`, `Enter`, then `Ctrl+X`), then restart the app so it
+picks up the new values:
+
+```bash
+pm2 restart sydan --update-env
+```
+
+Test it: subscribe on the site — you should get a confirmation email. To watch
+what's happening, run `pm2 logs sydan`. (If `RESEND_API_KEY` is blank, the app
+still runs but only logs "would send…" instead of emailing.)
+
+### What each variable does
+
+| Variable         | Purpose                                                        |
+| ---------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`   | Path to the SQLite file (absolute so it's stable across runs) |
+| `APP_URL`        | Base URL used to build confirm/unsubscribe links in emails    |
+| `RESEND_API_KEY` | Your Resend key (`re_...`). Blank = emails only logged        |
+| `EMAIL_FROM`     | Sender address on a Resend-verified domain                    |
+
 ---
 
 ## Updating the site later

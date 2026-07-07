@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
+
+# database (SQLite lives next to the schema; never commit it)
+/prisma/*.db
+/prisma/*.db-journal
 
 # vercel
 .vercel
