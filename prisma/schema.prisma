@@ -44,6 +44,10 @@ model Subscription {
   confirmToken     String?        @unique
   unsubToken       String         @unique
   confirmedAt      DateTime?
+  // Cursor for outgoing notifications: the last time we emailed this subscriber.
+  // Combined with confirmedAt, it ensures they only ever get articles published
+  // after they subscribed, exactly once.
+  lastNotifiedAt   DateTime?
   createdAt        DateTime       @default(now())
   subscriber       Subscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
   specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
@@ -72,7 +76,6 @@ model Article {
   title            String
   link             String         @unique
   publishedAt      DateTime?
-  notifiedAt       DateTime?
   createdAt        DateTime       @default(now())
   specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
   resource         Resource?      @relation(fields: [resourceId], references: [id], onDelete: SetNull)

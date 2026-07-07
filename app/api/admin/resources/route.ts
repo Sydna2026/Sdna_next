@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { isAdminRequest } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Manage the research feeds (Resource rows) attached to specializations.
-// Protected by ADMIN_PASSWORD (Bearer token). The Phase 4 admin UI reuses this.
-function authorized(req: NextRequest): boolean {
-  const pw = process.env.ADMIN_PASSWORD;
-  if (!pw) return false;
-  const header = req.headers.get("authorization") || "";
-  const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
-  return bearer === pw;
-}
-
+// Auth: admin session cookie (UI) or Bearer ADMIN_PASSWORD (curl/automation).
 function guard(req: NextRequest): NextResponse | null {
   if (!process.env.ADMIN_PASSWORD) {
     return NextResponse.json(
@@ -22,7 +15,7 @@ function guard(req: NextRequest): NextResponse | null {
       { status: 503 },
     );
   }
-  if (!authorized(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
   }
   return null;

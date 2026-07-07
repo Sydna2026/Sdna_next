@@ -57,15 +57,14 @@ export async function runIngestion(): Promise<IngestSummary> {
     }
   }
 
-  // Notify subscribers for each specialization that got new articles.
+  // Notify each active subscriber, but only about articles PUBLISHED AFTER the
+  // date they subscribed (confirmedAt), and never the same article twice
+  // (lastNotifiedAt cursor). This gives new subscribers only forward-looking
+  // updates — no back-catalog — exactly per requirement.
   const base = process.env.APP_URL || "https://sydan.org";
-  for (const specId of touchedSpecs) {
-    const articles = await prisma.article.findMany({
-      where: { specializationId: specId, notifiedAt: null },
-      orderBy: { publishedAt: "desc" },
-    });
-    if (articles.length === 0) continue;
+  const now = new Date();
 
+  for (const specId of touchedSpecs) {
     const specialization = await prisma.specialization.findUnique({ where: { id: specId } });
     if (!specialization) continue;
 
@@ -75,6 +74,19 @@ export async function runIngestion(): Promise<IngestSummary> {
     });
 
     for (const sub of subscriptions) {
+      const anchor = sub.confirmedAt ?? sub.createdAt; // "the date they subscribed"
+      const since = sub.lastNotifiedAt ?? new Date(0); // avoid re-sending
+      const articles = await prisma.article.findMany({
+        where: {
+          specializationId: specId,
+          publishedAt: { gt: anchor },
+          createdAt: { gt: since },
+        },
+        orderBy: { publishedAt: "desc" },
+        take: 25,
+      });
+      if (articles.length === 0) continue;
+
       try {
         await sendArticlesEmail({
           to: sub.subscriber.email,
@@ -88,18 +100,18 @@ export async function runIngestion(): Promise<IngestSummary> {
           unsubscribeUrl: `${base}/api/unsubscribe?token=${sub.unsubToken}`,
         });
         summary.emailsSent++;
+        summary.perSpecialization[specialization.slug] =
+          (summary.perSpecialization[specialization.slug] ?? 0) + articles.length;
       } catch {
         // One bad recipient shouldn't abort the whole run.
       }
-    }
 
-    // Mark these articles as notified so we never email them twice, even if
-    // there were zero subscribers (avoids a backlog blast on first subscribe).
-    await prisma.article.updateMany({
-      where: { id: { in: articles.map((a) => a.id) } },
-      data: { notifiedAt: new Date() },
-    });
-    summary.perSpecialization[specialization.slug] = articles.length;
+      // Advance this subscriber's cursor so they aren't re-notified next run.
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: { lastNotifiedAt: now },
+      });
+    }
   }
 
   return summary;

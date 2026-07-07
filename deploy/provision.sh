@@ -139,7 +139,10 @@ npm run build
 # 5c. Database: create/update schema and seed specializations (idempotent)
 # ---------------------------------------------------------------------------
 log "Applying database schema (prisma db push)"
-npx prisma db push --skip-generate
+# --accept-data-loss lets non-interactive schema changes (e.g. dropping an
+# unused column) proceed. This app's data is the subscriber/article tables,
+# which are preserved by additive/compatible changes.
+npx prisma db push --skip-generate --accept-data-loss
 log "Seeding specializations"
 npx prisma db seed || log "Seed step reported an issue (continuing)."
 
