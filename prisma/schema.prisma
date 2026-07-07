@@ -18,10 +18,30 @@ model Specialization {
   id            String         @id @default(cuid())
   slug          String         @unique
   title         String
+  description   String?
+  detailsJson   String? // JSON array of bullet strings shown under "Key Aspects"
+  sortOrder     Int            @default(0)
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
   resources     Resource[]
   articles      Article[]
+}
+
+// Key/JSON store for editable page sections (home, contact, footer, branding).
+model SiteContent {
+  key       String   @id
+  json      String
+  updatedAt DateTime @updatedAt
+}
+
+// One row per ingestion run, for the admin dashboard's "ingestion status".
+model IngestRun {
+  id           String   @id @default(cuid())
+  ranAt        DateTime @default(now())
+  feedsChecked Int      @default(0)
+  feedsFailed  Int      @default(0)
+  newArticles  Int      @default(0)
+  emailsSent   Int      @default(0)
 }
 
 // A person who has given an email address. One subscriber can follow many

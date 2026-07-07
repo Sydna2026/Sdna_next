@@ -2,6 +2,34 @@
 
 import React, { useState, useEffect } from 'react';
 import SubscribeForm from './components/SubscribeForm';
+import {
+  DEFAULT_HOME,
+  DEFAULT_CONTACT,
+  DEFAULT_FOOTER,
+  DEFAULT_BRANDING,
+  DEFAULT_GUIDELINES,
+  type HomeContent,
+  type ContactContent,
+  type FooterContent,
+  type BrandingContent,
+  type GuidelineContent,
+} from '@/lib/defaults';
+
+interface ContentBundle {
+  home: HomeContent;
+  contact: ContactContent;
+  footer: FooterContent;
+  branding: BrandingContent;
+  guidelines: GuidelineContent[];
+}
+
+const DEFAULT_CONTENT: ContentBundle = {
+  home: DEFAULT_HOME,
+  contact: DEFAULT_CONTACT,
+  footer: DEFAULT_FOOTER,
+  branding: DEFAULT_BRANDING,
+  guidelines: DEFAULT_GUIDELINES,
+};
 
 // =========================================================================
 // TYPES & INTERFACES
@@ -15,8 +43,23 @@ interface GuidelineItem {
 }
 
 interface OurProjectPageProps {
-  onOpenGuideline: (guideline: GuidelineItem) => void;
+  contact: ContactContent;
+  onOpenSpecializations: () => void;
   triggerToast: (message: string) => void;
+}
+
+interface SpecializationsPageProps {
+  guidelines: GuidelineItem[];
+  onOpenGuideline: (guideline: GuidelineItem) => void;
+  onBack: () => void;
+}
+
+interface HomePageProps {
+  home: HomeContent;
+}
+
+interface ContactSectionProps {
+  contact: ContactContent;
 }
 
 // =========================================================================
@@ -37,144 +80,27 @@ const Oral_medicine = "/Oral medicine.png";
 const pathology = "/pathology.png";
 const removable_prosthodontics = "/removable_prosthodontics.png";
 
-const guidelinesData: GuidelineItem[] = [
-  {
-    id: "ortho",
-    title: "Orthodontics",
-    icon: (
-      <img
-        src={orthodontics}
-        alt="Orthodontics"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Guidelines on the latest orthodontic techniques, diagnosis of malocclusion, and treatment planning using advanced fixed and removable appliances.",
-    details: [
-      "Diagnosis and treatment of dental and skeletal malocclusions.",
-      "Comparative study between traditional metal braces and modern clear aligners.",
-      "Planning complex clinical cases and monitoring jaw growth in children."
-    ]
-  },
-  {
-    id: "surgery",
-    title: "Oral Surgery",
-    icon: (
-      <img
-        src={oral_surgery}
-        alt="Oral Surgery"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Approved surgical protocols for impacted teeth extraction, principles of dental implantology, and safe management of common surgical complications.",
-    details: [
-      "Performing minor oral surgeries such as surgical extraction of impacted teeth.",
-      "Basics of dental implant placement and selecting appropriate implant sizes.",
-      "Patient anesthesia methods, post-operative hemorrhage control, and infection prevention."
-    ]
-  },
-  {
-    id: "fixed-prostho",
-    title: "Fixed Prosthodontics",
-    icon: (
-      <img
-        src={fixed_prosthodontics}
-        alt="Fixed Prosthodontics"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "A comprehensive guide to crown and bridge preparation, selecting suitable dental materials (zirconia & porcelain), and digital or traditional impression methods.",
-    details: [
-      "Rules of tooth preparation to receive crowns and bridges without pulpal damage.",
-      "Clinical comparison between zirconia, all-ceramic, and porcelain-fused-to-metal crowns.",
-      "Digital impression techniques using state-of-the-art intraoral scanners."
-    ]
-  },
-  {
-    id: "removable-prostho",
-    title: "Removable Prosthodontics",
-    icon: (
-      <img
-        src={removable_prosthodontics}
-        alt="Removable Prosthodontics"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Design and fabrication steps for complete and partial dentures, focusing on denture stability and patient comfort.",
-    details: [
-      "Designing complete dentures for edentulous patients using anatomical support points.",
-      "Fabricating and adjusting acrylic and chromium-cobalt partial dentures.",
-      "Solving instability issues and training patients on proper denture usage."
-    ]
-  },
-  {
-    id: "pediatric",
-    title: "Pediatric Dentistry",
-    icon: (
-      <img
-        src={pediatric_dentistry}
-        alt="Pediatric Dentistry"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Psychological and behavioral management of children in the dental clinic, early caries prevention, and pulp treatments for primary teeth.",
-    details: [
-      "Applying positive behavior guidance techniques to overcome dental fear in children.",
-      "Treating dental caries, topical fluoride application, and pit & fissure sealants.",
-      "Endodontic treatments for primary teeth (pulpotomy and pulpectomy)."
-    ]
-  },
-  {
-    id: "endodontics",
-    title: "Endodontics",
-    icon: (
-      <img
-        src={Endodontics}
-        alt="Endodontics"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Modern techniques in root canal preparation using rotary instruments, irrigation protocols, and three-dimensional obturation.",
-    details: [
-      "Determining working length accurately using electronic apex locators.",
-      "Mechanical preparation of root canals using modern rotary systems.",
-      "Applying chemical irrigation protocols to disinfect root canals and obturate them in 3D."
-    ]
-  },
-  {
-    id: "medicine",
-    title: "Oral Medicine",
-    icon: (
-      <img
-        src={Oral_medicine}
-        alt="Oral Medicine"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Diagnosis and management of oral mucosal lesions, differentiating between benign and malignant conditions, and managing medically compromised dental patients.",
-    details: [
-      "Thorough clinical examination of oral mucosa and diagnosing ulcerations and stomatitis.",
-      "Managing chronic disease patients (diabetes, hypertension, bleeding disorders) in the dental clinic.",
-      "Prescribing appropriate medications and early intervention in cases of suspected tumors."
-    ]
-  },
-  {
-    id: "histology",
-    title: "Oral Histology",
-    icon: (
-      <img
-        src={pathology}
-        alt="Oral Histology"
-        className="w-8 h-8 object-contain"
-      />
-    ),
-    desc: "Microscopic study of hard and soft oral tissues, and the stages of prenatal and clinical development of teeth and jaws.",
-    details: [
-      "Microscopic study of enamel, dentin, cementum, and periodontal ligament cells.",
-      "Tracking the stages of tooth development (odontogenesis) during embryonic stages.",
-      "Understanding the cellular processes responsible for natural tooth eruption and shedding."
-    ]
-  },
-];
+// Icons stay in code, keyed by specialization slug; text comes from the DB.
+const ICON_BY_SLUG: Record<string, React.ReactNode> = {
+  "ortho": <img src={orthodontics} alt="Orthodontics" className="w-8 h-8 object-contain" />,
+  "surgery": <img src={oral_surgery} alt="Oral Surgery" className="w-8 h-8 object-contain" />,
+  "fixed-prostho": <img src={fixed_prosthodontics} alt="Fixed Prosthodontics" className="w-8 h-8 object-contain" />,
+  "removable-prostho": <img src={removable_prosthodontics} alt="Removable Prosthodontics" className="w-8 h-8 object-contain" />,
+  "pediatric": <img src={pediatric_dentistry} alt="Pediatric Dentistry" className="w-8 h-8 object-contain" />,
+  "endodontics": <img src={Endodontics} alt="Endodontics" className="w-8 h-8 object-contain" />,
+  "medicine": <img src={Oral_medicine} alt="Oral Medicine" className="w-8 h-8 object-contain" />,
+  "histology": <img src={pathology} alt="Oral Histology" className="w-8 h-8 object-contain" />,
+};
+
+function guidelineItems(guidelines: GuidelineContent[]): GuidelineItem[] {
+  return guidelines.map((g) => ({
+    id: g.slug,
+    title: g.title,
+    desc: g.desc,
+    details: g.details,
+    icon: ICON_BY_SLUG[g.slug] ?? null,
+  }));
+}
 
 export default function NextApp() {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -182,6 +108,16 @@ export default function NextApp() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [scrollOpacity, setScrollOpacity] = useState<number>(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [content, setContent] = useState<ContentBundle>(DEFAULT_CONTENT);
+
+  useEffect(() => {
+    fetch('/api/content')
+      .then((r) => r.json())
+      .then((d) => { if (d?.ok && d.content) setContent(d.content); })
+      .catch(() => {});
+  }, []);
+
+  const guidelines = guidelineItems(content.guidelines);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -226,8 +162,8 @@ export default function NextApp() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[#F9ECE4] font-black text-xl tracking-wider leading-none">SyDAN</span>
-                <span className="text-[#A08C8A] font-light text-[10px] tracking-widest uppercase">SYRIAN NETWORK</span>
+                <span className="text-[#F9ECE4] font-black text-xl tracking-wider leading-none">{content.branding.brand}</span>
+                <span className="text-[#A08C8A] font-light text-[10px] tracking-widest uppercase">{content.branding.subtitle}</span>
               </div>
             </div>
 
@@ -305,16 +241,17 @@ export default function NextApp() {
       {renderNavbar()}
 
       <div className="flex-grow pt-20">
-        {currentPage === 'home' && <HomePage />}
-        {currentPage === 'project' && <OurProjectPage onOpenGuideline={setSelectedGuideline} triggerToast={triggerToast}/>}
-        {currentPage === 'join' && <JoinUsPage />}
-        {currentPage === 'contact' && <ContactPage />}
+        {currentPage === 'home' && <HomePage home={content.home} />}
+        {currentPage === 'project' && <OurProjectPage contact={content.contact} onOpenSpecializations={() => setCurrentPage('specializations')} triggerToast={triggerToast}/>}
+        {currentPage === 'specializations' && <SpecializationsPage guidelines={guidelines} onOpenGuideline={setSelectedGuideline} onBack={() => setCurrentPage('project')} />}
+        {currentPage === 'join' && <JoinUsPage contact={content.contact} />}
+        {currentPage === 'contact' && <ContactPage contact={content.contact} />}
       </div>
 
       <footer className="bg-[#3D3D3D] py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-[#F9ECE4] text-xs font-semibold tracking-widest uppercase opacity-75">
-            © 2026 SYDAN Website. All rights reserved.
+            {content.footer.copyright}
           </p>
         </div>
       </footer>
@@ -369,32 +306,34 @@ export default function NextApp() {
   );
 }
 
-function HomePage() {
+const ABOUT_ICON_PATHS = [
+  "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
+  "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z",
+  "M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3",
+];
+
+function HomePage({ home }: HomePageProps) {
   return (
     <div className="animate-fadeIn">
       <section className="relative bg-gradient-to-b from-[#4A4A4A] to-[#3B3B3B] py-20 px-4 text-center">
         <div className="max-w-4xl mx-auto flex flex-col items-center">
           <div className="mb-8">
 <div className="bg-white/5 rounded-[24px] border border-white/10 p-5 w-[220px] h-[220px] flex items-center justify-center shadow-2xl backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300">
-  <img src={logo} alt="SDAN Emblem" className="object-contain w-full h-full" />
+  <img src={logo} alt="SYDAN Emblem" className="object-contain w-full h-full" />
 </div>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-[#F9ECE4] tracking-tight mb-8">Syrian Dental<br /><span className="text-[#A08C8A]">Academic Network</span></h1>
-          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-6">Connecting Syrian dental minds, turning clinic stories into shared science. Because our work doesn't end in the clinic—it begins with research.</p>
+          <h1 className="text-4xl sm:text-6xl font-black text-[#F9ECE4] tracking-tight mb-8">{home.heroLine1}<br /><span className="text-[#A08C8A]">{home.heroLine2}</span></h1>
+          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-6">{home.heroSubtitle}</p>
         </div>
       </section>
       <section className="bg-[#F9ECE4] text-[#4A4A4A] py-20 px-4 sm:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-black text-[#4A4A4A] uppercase tracking-widest mb-3">About Our Network</h2><div className="w-[80px] h-[4px] bg-[#A08C8A] rounded-[2px] mx-auto"></div></div>
+          <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-black text-[#4A4A4A] uppercase tracking-widest mb-3">{home.aboutHeading}</h2><div className="w-[80px] h-[4px] bg-[#A08C8A] rounded-[2px] mx-auto"></div></div>
           <div className="space-y-8">
-            {[ 
-              {title: "Who We Are", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z", desc: "We are the first dental network in Syria built to bring science into our daily practice. We connect Syrian dentists everywhere to help each other learn, research, and grow together"}, 
-              {title: "Our Vision", icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z", desc: "To transform dental medicine in Syria into a truly Evidence-Based Practice—replacing old rituals and personal opinions with solid, verified scientific proof."}, 
-              {title: "Our Message", icon: "M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3", desc: "To help Syrian dental students and clinicians go beyond daily clinic routines and dive deep into research. We provide the essential tools to understand scientific data, support the publication of local clinical work, and bridge the gap between everyday practice and global guidelines."} 
-            ].map((item, idx) => (
+            {home.cards.map((item, idx) => (
               <div key={idx} className="bg-white rounded-[24px] border border-[#E5D5CD] p-8 shadow-sm flex items-start space-x-6">
-                <div className="p-4 bg-[#A08C8A]/15 rounded-2xl text-[#A08C8A]"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} /></svg></div>
+                <div className="p-4 bg-[#A08C8A]/15 rounded-2xl text-[#A08C8A]"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ABOUT_ICON_PATHS[idx % ABOUT_ICON_PATHS.length]} /></svg></div>
                 <div><h3 className="text-xl md:text-2xl font-extrabold text-[#4A4A4A] mb-3">{item.title}</h3><p className="text-sm md:text-base text-gray-700 leading-relaxed">{item.desc}</p></div>
               </div>
             ))}
@@ -405,7 +344,7 @@ function HomePage() {
   );
 }
 
-function OurProjectPage({ onOpenGuideline, triggerToast }: OurProjectPageProps) {
+function OurProjectPage({ contact, onOpenSpecializations, triggerToast }: OurProjectPageProps) {
   return (
     <div className="bg-[#4A4A4A] animate-fadeIn p-4">
       <div className="w-full min-h-[220px] flex flex-col justify-center items-center py-10">
@@ -428,13 +367,30 @@ function OurProjectPage({ onOpenGuideline, triggerToast }: OurProjectPageProps) 
         <div className="bg-white rounded-[24px] border p-8 shadow-xl text-gray-800">
           <div className="p-3 bg-[#A08C8A]/10 rounded-xl text-[#A08C8A] w-fit mb-4"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg></div>
           <h3 className="text-2xl font-black text-[#4A4A4A] mb-3">Share Your Ideas</h3>
-          <a href="https://docs.google.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#4A4A4A] text-white font-bold py-4 rounded-xl text-center uppercase tracking-wider hover:bg-[#333] transition-colors">Google Form Link</a>
+          <a href={contact.shareIdeasUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#4A4A4A] text-white font-bold py-4 rounded-xl text-center uppercase tracking-wider hover:bg-[#333] transition-colors">Google Form Link</a>
+        </div>
+        <div className="bg-white rounded-[24px] border p-8 shadow-xl text-gray-800">
+          <div className="p-3 bg-[#A08C8A]/10 rounded-xl text-[#A08C8A] w-fit mb-4"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg></div>
+          <h3 className="text-2xl font-black text-[#4A4A4A] mb-3">Guidelines</h3>
+          <p className="text-[#4A4A4A] text-sm sm:text-base leading-relaxed mb-6 font-medium">Evidence-based clinical guidelines across every dental specialization. Click below to browse all specializations, read the key aspects of each field, and subscribe to receive new research articles by email.</p>
+          <button onClick={onOpenSpecializations} className="flex items-center justify-center w-full bg-[#A08C8A] text-white font-bold py-4 rounded-xl text-center uppercase tracking-wider hover:bg-[#8e7a78] transition-colors">Explore Specializations</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SpecializationsPage({ guidelines, onOpenGuideline, onBack }: SpecializationsPageProps) {
+  return (
+    <div className="bg-[#4A4A4A] animate-fadeIn p-4">
+      <div className="w-full min-h-[220px] flex flex-col justify-center items-center py-10">
+        <h2 className="text-3xl sm:text-4xl font-black text-[#A08C8A] tracking-[3px] uppercase text-center mb-3">SPECIALIZATIONS</h2>
+        <p className="text-sm sm:text-base text-white/70 text-center max-w-xl font-medium">Choose a specialization to read its clinical guidelines and subscribe for new research updates by email.</p>
+        <button onClick={onBack} className="mt-5 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-[#A08C8A] transition-colors">&larr; Back to projects</button>
+      </div>
       <div className="max-w-7xl mx-auto px-4 pb-16">
-        <h3 className="text-2xl font-black text-[#A08C8A] uppercase tracking-wider mb-6">Guidelines</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {guidelinesData.map((item) => (
+          {guidelines.map((item) => (
             <div key={item.id} onClick={() => onOpenGuideline(item)} className="bg-white rounded-[16px] border p-5 cursor-pointer hover:border-[#A08C8A] hover:shadow-md transition-all flex items-center justify-between group">
               <div className="flex items-center space-x-4"><div className="p-3 bg-[#A08C8A]/15 text-[#A08C8A] rounded-xl shrink-0">{item.icon}</div><h4 className="font-extrabold text-[#4A4A4A] leading-tight break-words">{item.title}</h4></div>
             </div>
@@ -445,7 +401,7 @@ function OurProjectPage({ onOpenGuideline, triggerToast }: OurProjectPageProps) 
   );
 }
 
-function JoinUsPage() {
+function JoinUsPage({ contact }: ContactSectionProps) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-16 animate-fadeIn">
       <div className="flex flex-col md:flex-row items-center justify-center gap-12 max-w-5xl mx-auto mt-8">
@@ -470,10 +426,10 @@ function JoinUsPage() {
             Please fill out our official registration form to submit your application and request to join us.
           </p>
           
-          <a 
-            href="https://docs.google.com" 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            href={contact.joinFormUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-center space-x-2 w-full bg-[#A08C8A] text-white font-bold py-3.5 rounded-2xl text-center text-sm uppercase tracking-wide hover:bg-[#8e7a78] shadow-md transition-all mb-8"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -493,8 +449,8 @@ function JoinUsPage() {
           <div className="space-y-3">
             
             {/* Email item */}
-            <a 
-              href="mailto:sdan.dental@gmail.com" 
+            <a
+              href={`mailto:${contact.gmail}`}
               className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
             >
               <div className="flex items-center space-x-4">
@@ -505,7 +461,7 @@ function JoinUsPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Official Gmail</span>
-                  <span className="text-sm font-semibold text-gray-700 truncate max-w-[180px] sm:max-w-none">sdan.dental@gmail.com</span>
+                  <span className="text-sm font-semibold text-gray-700 truncate max-w-[180px] sm:max-w-none">{contact.gmail}</span>
                 </div>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-[#A08C8A] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -514,10 +470,10 @@ function JoinUsPage() {
             </a>
 
             {/* Instagram item */}
-            <a 
-              href="https://www.instagram.com/syrian.dan?igsh=MTVxcnlnNmg4NjM0ZA==" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={contact.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
             >
               <div className="flex items-center space-x-4">
@@ -538,10 +494,10 @@ function JoinUsPage() {
             </a>
 
             {/* LinkedIn item */}
-            <a 
-              href="https://linkedin.com" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={contact.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
             >
               <div className="flex items-center space-x-4">
@@ -550,7 +506,7 @@ function JoinUsPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">LinkedIn Page</span>
-                  <span className="text-sm font-semibold text-gray-700">SDAN Network</span>
+                  <span className="text-sm font-semibold text-gray-700">SYDAN Network</span>
                 </div>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-[#A08C8A] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -565,7 +521,7 @@ function JoinUsPage() {
   );
 }
 
-function ContactPage() {
+function ContactPage({ contact }: ContactSectionProps) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-16 animate-fadeIn">
       <div className="text-center mb-12"><h2 className="text-3xl font-black text-[#F9ECE4] uppercase tracking-wider">CONTACT US</h2></div>
@@ -575,15 +531,15 @@ function ContactPage() {
           <div className="w-24 h-24 bg-white rounded-2xl shadow-md border p-2 mb-4 hover:scale-105 transition-transform">
             <img src={HERO_LOGO_URL} alt="Contact" className="w-full h-full object-contain" />
           </div>
-          <h4 className="text-xl font-black text-[#4A4A4A]">Sulaf Alghazali</h4>
-          <p className="text-xs text-gray-400 font-bold tracking-widest uppercase mt-1">SDAN Administration</p>
+          <h4 className="text-xl font-black text-[#4A4A4A]">{contact.adminName}</h4>
+          <p className="text-xs text-gray-400 font-bold tracking-widest uppercase mt-1">{contact.adminTitle}</p>
         </div>
 
         <div className="space-y-4 max-w-md mx-auto">
           
           {/* Email Card */}
-          <a 
-            href="mailto:sulafghazali@gmail.com" 
+          <a
+            href={`mailto:${contact.email}`}
             className="flex items-center space-x-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
           >
             <div className="w-10 h-10 rounded-xl bg-[#A08C8A] text-white flex items-center justify-center shadow-sm">
@@ -593,13 +549,13 @@ function ContactPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</span>
-              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#A08C8A] transition-colors">sulafghazali@gmail.com</span>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#A08C8A] transition-colors">{contact.email}</span>
             </div>
           </a>
 
           {/* Phone Card */}
-          <a 
-            href="tel:+963934639540" 
+          <a
+            href={`tel:${contact.phone.replace(/\s+/g, '')}`}
             className="flex items-center space-x-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
           >
             <div className="w-10 h-10 rounded-xl bg-[#A08C8A] text-white flex items-center justify-center shadow-sm">
@@ -609,15 +565,15 @@ function ContactPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone / WhatsApp</span>
-              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#A08C8A] transition-colors" dir="ltr">+963 934 639 540</span>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#A08C8A] transition-colors" dir="ltr">{contact.phone}</span>
             </div>
           </a>
 
           {/* Instagram Card */}
-          <a 
-            href="https://www.instagram.com/syrian.dan?igsh=MTVxcnlnNmg4NjM0ZA==" 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            href={contact.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center space-x-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-[#F9ECE4]/30 hover:border-[#A08C8A]/30 transition-all group"
           >
             <div className="w-10 h-10 rounded-xl bg-[#A08C8A] text-white flex items-center justify-center shadow-sm">

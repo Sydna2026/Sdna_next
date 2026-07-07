@@ -34,7 +34,7 @@ export async function runIngestion(): Promise<IngestSummary> {
       summary.feedsFailed++;
       continue;
     }
-    let feed: Parser.Output<Record<string, unknown>>;
+    let feed: Awaited<ReturnType<typeof parser.parseURL>>;
     try {
       feed = await parser.parseURL(resource.feedUrl);
     } catch {
@@ -119,6 +119,16 @@ export async function runIngestion(): Promise<IngestSummary> {
       });
     }
   }
+
+  // Record this run for the admin dashboard.
+  await prisma.ingestRun.create({
+    data: {
+      feedsChecked: summary.feedsChecked,
+      feedsFailed: summary.feedsFailed,
+      newArticles: summary.newArticles,
+      emailsSent: summary.emailsSent,
+    },
+  });
 
   return summary;
 }
