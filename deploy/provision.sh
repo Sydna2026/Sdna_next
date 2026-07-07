@@ -117,11 +117,13 @@ APP_URL="https://${DOMAIN}"
 RESEND_API_KEY=""
 EMAIL_FROM="SDAN <news@${DOMAIN}>"
 CRON_SECRET="$(gen_secret)"
+ADMIN_EMAIL=""
 ADMIN_PASSWORD=""
 ENV
 else
   # Existing .env: make sure newer keys exist without touching current values.
   ensure_env_var "CRON_SECRET" "$(gen_secret)"
+  ensure_env_var "ADMIN_EMAIL" ""
   ensure_env_var "ADMIN_PASSWORD" ""
 fi
 

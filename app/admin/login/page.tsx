@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
@@ -42,11 +43,20 @@ export default function AdminLoginPage() {
         <h1 className="text-2xl font-black mb-1">Admin</h1>
         <p className="text-sm text-gray-600 mb-6">Sign in to manage the site.</p>
         <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Admin email"
+          autoComplete="username"
+          autoFocus
+          className="w-full rounded-xl border border-[#A08C8A]/40 bg-white px-4 py-3 text-sm outline-none focus:border-[#A08C8A] mb-3"
+        />
+        <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Admin password"
-          autoFocus
+          autoComplete="current-password"
           className="w-full rounded-xl border border-[#A08C8A]/40 bg-white px-4 py-3 text-sm outline-none focus:border-[#A08C8A]"
         />
         {error && <p className="text-sm text-red-600 mt-3">{error}</p>}

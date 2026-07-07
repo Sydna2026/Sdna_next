@@ -30,13 +30,21 @@ export function verifySessionValue(value?: string | null): boolean {
   return Number.isFinite(exp) && exp > Date.now();
 }
 
-// Constant-time password check for the login route.
+// Constant-time password check (used for the Bearer token in API calls).
 export function passwordMatches(input: string): boolean {
   const pw = key();
   if (!pw) return false;
   const a = Buffer.from(input);
   const b = Buffer.from(pw);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Email + password check for the admin login form.
+export function credentialsMatch(email: string, password: string): boolean {
+  const adminEmail = process.env.ADMIN_EMAIL || "";
+  if (!adminEmail || !key()) return false;
+  const emailOk = email.trim().toLowerCase() === adminEmail.trim().toLowerCase();
+  return emailOk && passwordMatches(password);
 }
 
 // For API route handlers: allow either a valid session cookie (admin UI) or a
