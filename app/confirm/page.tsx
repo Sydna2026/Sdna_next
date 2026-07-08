@@ -12,7 +12,8 @@ export default async function ConfirmPage({
     <TokenAction
       token={token ?? ""}
       endpoint="/api/confirm"
-      promptHeading="Confirm your subscription"
+      autoRun
+      promptHeading="Confirming your subscription"
       promptText="Click the button below to confirm and start receiving new-research updates."
       buttonLabel="Confirm subscription"
       successHeading="Subscription confirmed"

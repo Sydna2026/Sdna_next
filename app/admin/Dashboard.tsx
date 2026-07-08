@@ -31,7 +31,13 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-export default function Dashboard({ onAuthError }: { onAuthError: (r: Response) => boolean }) {
+export default function Dashboard({
+  onAuthError,
+  onSelectSpecialization,
+}: {
+  onAuthError: (r: Response) => boolean;
+  onSelectSpecialization: (slug: string) => void;
+}) {
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
@@ -78,6 +84,7 @@ export default function Dashboard({ onAuthError }: { onAuthError: (r: Response) 
         <h3 className="text-sm font-black uppercase tracking-wider text-[#A08C8A] mb-3">
           By specialization
         </h3>
+        <p className="text-xs text-gray-500 mb-2">Click a row to see and manage its subscribers.</p>
         <div className="overflow-x-auto rounded-2xl border border-[#E5D5CD] bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="bg-[#F9ECE4] text-xs uppercase tracking-wider text-gray-500">
@@ -90,8 +97,12 @@ export default function Dashboard({ onAuthError }: { onAuthError: (r: Response) 
             </thead>
             <tbody>
               {data.specializations.map((s) => (
-                <tr key={s.slug} className="border-t border-[#E5D5CD]/60">
-                  <td className="px-4 py-2.5 font-semibold">{s.title}</td>
+                <tr
+                  key={s.slug}
+                  onClick={() => onSelectSpecialization(s.slug)}
+                  className="border-t border-[#E5D5CD]/60 cursor-pointer hover:bg-[#F9ECE4]"
+                >
+                  <td className="px-4 py-2.5 font-semibold text-[#A08C8A]">{s.title}</td>
                   <td className="px-4 py-2.5">{s.subscribersActive}</td>
                   <td className="px-4 py-2.5">{s.feeds}</td>
                   <td className="px-4 py-2.5">{s.articles}</td>

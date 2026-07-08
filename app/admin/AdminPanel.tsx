@@ -25,7 +25,7 @@ interface Subscriber {
   email: string;
   name: string | null;
   createdAt: string;
-  subscriptions: { specialization: string; slug: string; status: string }[];
+  subscriptions: { id: string; specialization: string; slug: string; status: string }[];
 }
 
 type Tab = "dashboard" | "content" | "feeds" | "subscribers";
@@ -45,6 +45,10 @@ export default function AdminPanel() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string>("");
+  const [subFilter, setSubFilter] = useState<string>("all");
+  const [newSubEmail, setNewSubEmail] = useState("");
+  const [newSubName, setNewSubName] = useState("");
+  const [newSubSlug, setNewSubSlug] = useState("");
 
   const handleAuthError = useCallback(
     (res: Response) => {
@@ -128,7 +132,65 @@ export default function AdminPanel() {
     router.refresh();
   }
 
+  async function addSubscriber() {
+    if (!newSubEmail.trim() || !newSubSlug) {
+      setNotice("Enter an email and choose a specialization.");
+      return;
+    }
+    setBusy(true);
+    const res = await fetch("/api/admin/subscribers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: newSubEmail.trim(), name: newSubName.trim(), slug: newSubSlug }),
+    });
+    if (handleAuthError(res)) return;
+    const data = await res.json();
+    setBusy(false);
+    if (!data.ok) {
+      setNotice(data.error || "Could not add subscriber.");
+      return;
+    }
+    setNewSubEmail("");
+    setNewSubName("");
+    setNotice("Subscriber added.");
+    await reload();
+  }
+
+  async function setSubStatus(subscriptionId: string, status: string) {
+    setBusy(true);
+    const res = await fetch("/api/admin/subscribers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId, status }),
+    });
+    if (handleAuthError(res)) return;
+    setBusy(false);
+    await reload();
+  }
+
+  async function removeSubscription(subscriptionId: string) {
+    if (!window.confirm("Remove this subscription?")) return;
+    setBusy(true);
+    const res = await fetch(`/api/admin/subscribers?subscriptionId=${subscriptionId}`, {
+      method: "DELETE",
+    });
+    if (handleAuthError(res)) return;
+    setBusy(false);
+    await reload();
+  }
+
   const feedsFor = (slug: string) => resources.filter((r) => r.specialization.slug === slug);
+
+  // Subscribers filtered by the chosen specialization (for the drill-down).
+  const filteredSubscribers =
+    subFilter === "all"
+      ? subscribers
+      : subscribers
+          .map((s) => ({
+            ...s,
+            subscriptions: s.subscriptions.filter((sub) => sub.slug === subFilter),
+          }))
+          .filter((s) => s.subscriptions.length > 0);
 
   const SideIcon = ({ d }: { d: string }) => (
     <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +258,15 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {tab === "dashboard" && <Dashboard onAuthError={handleAuthError} />}
+          {tab === "dashboard" && (
+            <Dashboard
+              onAuthError={handleAuthError}
+              onSelectSpecialization={(slug) => {
+                setSubFilter(slug);
+                setTab("subscribers");
+              }}
+            />
+          )}
 
           {tab === "content" && <ContentEditor onAuthError={handleAuthError} />}
 
@@ -253,53 +323,124 @@ export default function AdminPanel() {
           )}
 
           {tab === "subscribers" && (
-            <div className="overflow-x-auto rounded-2xl border border-[#E5D5CD] bg-white shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F9ECE4] text-xs uppercase tracking-wider text-gray-500">
-                  <tr>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Subscriptions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subscribers.map((s) => (
-                    <tr key={s.id} className="border-t border-[#E5D5CD]/60 align-top">
-                      <td className="px-4 py-3 break-all">{s.email}</td>
-                      <td className="px-4 py-3">{s.name || "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          {s.subscriptions.map((sub, i) => (
-                            <span
-                              key={i}
-                              className={`rounded-full px-2 py-0.5 text-xs ${
-                                sub.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : sub.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-200 text-gray-600"
-                              }`}
-                              title={sub.status}
-                            >
-                              {sub.specialization}
-                            </span>
-                          ))}
-                          {s.subscriptions.length === 0 && (
-                            <span className="text-xs text-gray-400">—</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {subscribers.length === 0 && (
+            <div className="space-y-5">
+              {/* Filter + add */}
+              <div className="flex flex-col gap-3 rounded-2xl border border-[#E5D5CD] bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-gray-500">
+                    Filter by specialization
+                  </span>
+                  <select
+                    value={subFilter}
+                    onChange={(e) => setSubFilter(e.target.value)}
+                    className="rounded-lg border border-[#A08C8A]/40 px-3 py-2 text-sm outline-none focus:border-[#A08C8A]"
+                  >
+                    <option value="all">All specializations</option>
+                    {specs.map((sp) => (
+                      <option key={sp.slug} value={sp.slug}>
+                        {sp.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="rounded-2xl border border-dashed border-[#A08C8A]/50 bg-white p-4 shadow-sm">
+                <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[#A08C8A]">
+                  Add a subscriber
+                </h4>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={newSubEmail}
+                    onChange={(e) => setNewSubEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="flex-1 rounded-lg border border-[#A08C8A]/40 px-3 py-2 text-sm outline-none focus:border-[#A08C8A]"
+                  />
+                  <input
+                    value={newSubName}
+                    onChange={(e) => setNewSubName(e.target.value)}
+                    placeholder="Name (optional)"
+                    className="rounded-lg border border-[#A08C8A]/40 px-3 py-2 text-sm outline-none focus:border-[#A08C8A] sm:w-40"
+                  />
+                  <select
+                    value={newSubSlug}
+                    onChange={(e) => setNewSubSlug(e.target.value)}
+                    className="rounded-lg border border-[#A08C8A]/40 px-3 py-2 text-sm outline-none focus:border-[#A08C8A]"
+                  >
+                    <option value="">Specialization…</option>
+                    {specs.map((sp) => (
+                      <option key={sp.slug} value={sp.slug}>
+                        {sp.title}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={addSubscriber}
+                    disabled={busy}
+                    className="rounded-lg bg-[#4A4A4A] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#333] disabled:opacity-60"
+                  >
+                    Add
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-400">Admin-added subscribers are active immediately (no email confirmation).</p>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-[#E5D5CD] bg-white shadow-sm">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#F9ECE4] text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-400">
-                        No subscribers yet.
-                      </td>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Name</th>
+                      <th className="px-4 py-3">Subscriptions</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredSubscribers.map((s) => (
+                      <tr key={s.id} className="border-t border-[#E5D5CD]/60 align-top">
+                        <td className="px-4 py-3 break-all">{s.email}</td>
+                        <td className="px-4 py-3">{s.name || "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="space-y-1.5">
+                            {s.subscriptions.map((sub) => (
+                              <div key={sub.id} className="flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-xs ${
+                                    sub.status === "active"
+                                      ? "bg-green-100 text-green-800"
+                                      : sub.status === "pending"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : sub.status === "paused"
+                                          ? "bg-orange-100 text-orange-800"
+                                          : "bg-gray-200 text-gray-600"
+                                  }`}
+                                >
+                                  {sub.specialization} · {sub.status}
+                                </span>
+                                {sub.status === "active" ? (
+                                  <button onClick={() => setSubStatus(sub.id, "paused")} disabled={busy} className="text-xs font-bold text-orange-600 hover:underline">Pause</button>
+                                ) : (
+                                  <button onClick={() => setSubStatus(sub.id, "active")} disabled={busy} className="text-xs font-bold text-green-700 hover:underline">Activate</button>
+                                )}
+                                <button onClick={() => removeSubscription(sub.id)} disabled={busy} className="text-xs font-bold text-red-600 hover:underline">Remove</button>
+                              </div>
+                            ))}
+                            {s.subscriptions.length === 0 && (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredSubscribers.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-400">
+                          No subscribers{subFilter !== "all" ? " for this specialization" : ""} yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

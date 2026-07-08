@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 interface TokenActionProps {
@@ -13,16 +13,25 @@ interface TokenActionProps {
   // Plain string (not a function) so it can be passed from a Server Component.
   // "{title}" is replaced with the specialization title returned by the API.
   successTemplate: string;
+  // When true, the action runs automatically on load (one click from the email)
+  // instead of requiring a button press. Still safe: link prefetchers/scanners
+  // fetch the page without running this JS, so they can't trigger it.
+  autoRun?: boolean;
 }
 
 type State = "idle" | "loading" | "done" | "error";
 
 export default function TokenAction(props: TokenActionProps) {
-  const [state, setState] = useState<State>(props.token ? "idle" : "error");
+  const [state, setState] = useState<State>(
+    props.token ? (props.autoRun ? "loading" : "idle") : "error",
+  );
   const [title, setTitle] = useState<string | undefined>(undefined);
   const [error, setError] = useState("This link is invalid.");
+  const started = useRef(false);
 
-  async function run() {
+  const run = useCallback(async () => {
+    if (started.current) return; // guard against double-invocation
+    started.current = true;
     setState("loading");
     try {
       const res = await fetch(props.endpoint, {
@@ -42,7 +51,11 @@ export default function TokenAction(props: TokenActionProps) {
       setError("Network error. Please try again.");
       setState("error");
     }
-  }
+  }, [props.endpoint, props.token]);
+
+  useEffect(() => {
+    if (props.autoRun && props.token) run();
+  }, [props.autoRun, props.token, run]);
 
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-20">
@@ -59,16 +72,20 @@ export default function TokenAction(props: TokenActionProps) {
             <h1 className="text-2xl font-black mb-3">Link not valid</h1>
             <p className="text-sm text-gray-700 leading-relaxed mb-6">{error}</p>
           </>
+        ) : state === "loading" ? (
+          <>
+            <h1 className="text-2xl font-black mb-3">{props.promptHeading}</h1>
+            <p className="text-sm text-gray-700 leading-relaxed mb-6">One moment…</p>
+          </>
         ) : (
           <>
             <h1 className="text-2xl font-black mb-3">{props.promptHeading}</h1>
             <p className="text-sm text-gray-700 leading-relaxed mb-6">{props.promptText}</p>
             <button
               onClick={run}
-              disabled={state === "loading"}
-              className="inline-block rounded-xl bg-[#A08C8A] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#8e7a78] disabled:opacity-60"
+              className="inline-block rounded-xl bg-[#A08C8A] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#8e7a78]"
             >
-              {state === "loading" ? "Please wait…" : props.buttonLabel}
+              {props.buttonLabel}
             </button>
           </>
         )}
