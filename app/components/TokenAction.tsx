@@ -10,7 +10,9 @@ interface TokenActionProps {
   promptText: string;
   buttonLabel: string;
   successHeading: string;
-  successText: (title?: string) => string;
+  // Plain string (not a function) so it can be passed from a Server Component.
+  // "{title}" is replaced with the specialization title returned by the API.
+  successTemplate: string;
 }
 
 type State = "idle" | "loading" | "done" | "error";
@@ -49,7 +51,7 @@ export default function TokenAction(props: TokenActionProps) {
           <>
             <h1 className="text-2xl font-black mb-3">{props.successHeading}</h1>
             <p className="text-sm text-gray-700 leading-relaxed mb-6">
-              {props.successText(title)}
+              {props.successTemplate.replace("{title}", title ?? "")}
             </p>
           </>
         ) : state === "error" ? (

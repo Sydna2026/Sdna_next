@@ -82,6 +82,9 @@ export default function ContentEditor({
 }) {
   const [b, setB] = useState<Bundle | null>(null);
   const [notice, setNotice] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newRefs, setNewRefs] = useState("");
 
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/content");
@@ -126,6 +129,49 @@ export default function ContentEditor({
     if (onAuthError(r)) return;
     const d = await r.json();
     setNotice(d.ok ? "Saved." : d.error || "Save failed.");
+  }
+
+  async function deleteGuideline(slug: string, title: string) {
+    if (!window.confirm(`Delete "${title}"? This also removes its feeds, articles and subscriptions.`)) {
+      return;
+    }
+    setNotice("Deleting…");
+    const r = await fetch(`/api/admin/specializations?slug=${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+    });
+    if (onAuthError(r)) return;
+    const d = await r.json();
+    if (d.ok) {
+      setNotice("Deleted.");
+      await load();
+    } else {
+      setNotice(d.error || "Delete failed.");
+    }
+  }
+
+  async function addGuideline() {
+    if (!newTitle.trim()) {
+      setNotice("Enter a title for the new guideline.");
+      return;
+    }
+    setNotice("Adding…");
+    const details = newRefs.split("\n").map((s) => s.trim()).filter(Boolean);
+    const r = await fetch("/api/admin/specializations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle.trim(), description: newDesc.trim(), details }),
+    });
+    if (onAuthError(r)) return;
+    const d = await r.json();
+    if (d.ok) {
+      setNewTitle("");
+      setNewDesc("");
+      setNewRefs("");
+      setNotice("Guideline added.");
+      await load();
+    } else {
+      setNotice(d.error || "Add failed.");
+    }
   }
 
   const SaveBtn = ({ onClick }: { onClick: () => void }) => (
@@ -212,19 +258,40 @@ export default function ContentEditor({
                 gs[i] = { ...gs[i], desc: v };
                 update("guidelines", gs);
               }} />
-              <Area label="Key aspects (one per line)" rows={4} value={g.details.join("\n")} onChange={(v) => {
+              <Area label="References (one per line — links are shown as clickable)" rows={4} value={g.details.join("\n")} onChange={(v) => {
                 const gs = [...b.guidelines];
                 gs[i] = { ...gs[i], details: v.split("\n") };
                 update("guidelines", gs);
               }} />
-              <button
-                onClick={() => saveGuideline({ ...g, details: g.details.filter((d) => d.trim()) })}
-                className="rounded-lg bg-[#A08C8A] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#8e7a78]"
-              >
-                Save {g.title}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => saveGuideline({ ...g, details: g.details.filter((d) => d.trim()) })}
+                  className="rounded-lg bg-[#A08C8A] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#8e7a78]"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => deleteGuideline(g.slug, g.title)}
+                  className="rounded-lg border border-red-300 px-4 py-2 text-xs font-bold uppercase tracking-widest text-red-600 hover:bg-red-50"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-5 rounded-lg border border-dashed border-[#A08C8A]/50 p-3 space-y-2">
+          <h4 className="text-xs font-black uppercase tracking-wider text-[#A08C8A]">Add a new guideline</h4>
+          <Field label="Title" value={newTitle} onChange={setNewTitle} />
+          <Area label="Description" value={newDesc} onChange={setNewDesc} />
+          <Area label="References (one per line)" rows={3} value={newRefs} onChange={setNewRefs} />
+          <button
+            onClick={addGuideline}
+            className="rounded-lg bg-[#4A4A4A] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#333]"
+          >
+            Add guideline
+          </button>
         </div>
       </Card>
     </div>

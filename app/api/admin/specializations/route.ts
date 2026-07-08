@@ -86,3 +86,68 @@ export async function PATCH(req: NextRequest) {
   }
   return NextResponse.json({ ok: true });
 }
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+const createSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  slug: z.string().trim().max(60).optional(),
+  description: z.string().trim().max(2000).optional(),
+  details: z.array(z.string().trim().max(500)).max(20).optional(),
+});
+
+// Create a new guideline/specialization.
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+  let json: unknown;
+  try {
+    json = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
+  }
+  const parsed = createSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: "A title is required." }, { status: 400 });
+  }
+  const slug = (parsed.data.slug && slugify(parsed.data.slug)) || slugify(parsed.data.title);
+  if (!slug) {
+    return NextResponse.json({ ok: false, error: "Could not derive a slug." }, { status: 400 });
+  }
+  const exists = await prisma.specialization.findUnique({ where: { slug } });
+  if (exists) {
+    return NextResponse.json({ ok: false, error: "A guideline with that slug already exists." }, { status: 409 });
+  }
+  const max = await prisma.specialization.aggregate({ _max: { sortOrder: true } });
+  await prisma.specialization.create({
+    data: {
+      slug,
+      title: parsed.data.title,
+      description: parsed.data.description ?? "",
+      detailsJson: JSON.stringify((parsed.data.details ?? []).filter((d) => d.length)),
+      sortOrder: (max._max.sortOrder ?? 0) + 1,
+    },
+  });
+  return NextResponse.json({ ok: true, slug });
+}
+
+// Delete a guideline/specialization (cascades to its feeds, articles, subs).
+export async function DELETE(req: NextRequest) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+  const slug = req.nextUrl.searchParams.get("slug");
+  if (!slug) {
+    return NextResponse.json({ ok: false, error: "Missing slug." }, { status: 400 });
+  }
+  await prisma.specialization.delete({ where: { slug } }).catch(() => null);
+  return NextResponse.json({ ok: true });
+}

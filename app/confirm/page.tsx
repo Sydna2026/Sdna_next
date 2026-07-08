@@ -16,9 +16,7 @@ export default async function ConfirmPage({
       promptText="Click the button below to confirm and start receiving new-research updates."
       buttonLabel="Confirm subscription"
       successHeading="Subscription confirmed"
-      successText={(title) =>
-        `You'll now receive ${title ?? "specialization"} updates whenever new research is published.`
-      }
+      successTemplate="You'll now receive {title} updates whenever new research is published."
     />
   );
 }

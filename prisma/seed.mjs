@@ -66,31 +66,24 @@ const GUIDELINES = [
 const prisma = new PrismaClient();
 
 async function main() {
+  // First-run only: once any specialization exists, the guidelines are fully
+  // admin-managed (add/edit/remove), so we must NOT re-create deleted ones.
+  const count = await prisma.specialization.count();
+  if (count > 0) {
+    console.log(`Specializations already present (${count}) — skipping seed.`);
+    return;
+  }
   for (let i = 0; i < GUIDELINES.length; i++) {
     const g = GUIDELINES[i];
-    const existing = await prisma.specialization.findUnique({ where: { slug: g.slug } });
-    if (!existing) {
-      await prisma.specialization.create({
-        data: {
-          slug: g.slug,
-          title: g.title,
-          description: g.desc,
-          detailsJson: JSON.stringify(g.details),
-          sortOrder: i,
-        },
-      });
-    } else {
-      // Keep order in sync; fill description/details only if not set (don't
-      // clobber admin edits).
-      await prisma.specialization.update({
-        where: { slug: g.slug },
-        data: {
-          sortOrder: i,
-          description: existing.description ?? g.desc,
-          detailsJson: existing.detailsJson ?? JSON.stringify(g.details),
-        },
-      });
-    }
+    await prisma.specialization.create({
+      data: {
+        slug: g.slug,
+        title: g.title,
+        description: g.desc,
+        detailsJson: JSON.stringify(g.details),
+        sortOrder: i,
+      },
+    });
   }
   console.log(`Seeded ${GUIDELINES.length} specializations.`);
 }

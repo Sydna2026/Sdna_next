@@ -16,9 +16,7 @@ export default async function UnsubscribePage({
       promptText="Click below to stop receiving these updates."
       buttonLabel="Unsubscribe"
       successHeading="You've unsubscribed"
-      successText={(title) =>
-        `You will no longer receive ${title ?? "these"} updates. You can re-subscribe anytime from the guidelines page.`
-      }
+      successTemplate="You will no longer receive {title} updates. You can re-subscribe anytime from the guidelines page."
     />
   );
 }
