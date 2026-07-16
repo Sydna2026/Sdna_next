@@ -68,7 +68,7 @@ export const DEFAULT_CONTACT: ContactContent = {
   instagram: "https://www.instagram.com/syrian.dan?igsh=MTVxcnlnNmg4NjM0ZA==",
   gmail: "sdan.dental@gmail.com",
   linkedin: "https://linkedin.com",
-  joinFormUrl: "https://docs.google.com",
+  joinFormUrl: "https://forms.gle/cPS6kZHtZyXcvewj9",
   shareIdeasUrl: "https://docs.google.com",
 };
 
